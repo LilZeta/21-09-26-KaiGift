@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+ <meta charset="utf-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1" />
+ <title>Flores Amarillas 🌻 · 21 de septiembre de 2026</title>
+ <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌻</text></svg>" />
+ <link rel="preconnect" href="https://fonts.googleapis.com" />
+ <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+ <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&display=swap" rel="stylesheet" />
+ <style>
+ :root { color-scheme: dark; }
+ * { box-sizing: border-box; }
+ html, body { height: 100%; margin: 0; overflow: hidden; }
+ body {
+ background: #0e0a04;
+ font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+ }
+ canvas { display: block; }
+
+ /* --- BARRA SUPERIOR CON BOTÓN DE DESCARGA --- */
+ #top-bar {
+ position: fixed;
+ top: 12px;
+ right: 12px;
+ z-index: 60;
+ display: flex;
+ gap: 10px;
+ }
+ .download-btn {
+ background: rgba(35, 27, 6, 0.85);
+ border: 1px solid rgba(230, 190, 80, 0.6);
+ color: #ffdd75;
+ padding: 8px 16px;
+ font-size: 13px;
+ font-weight: 600;
+ border-radius: 20px;
+ cursor: pointer;
+ backdrop-filter: blur(6px);
+ transition: all 0.2s ease;
+ display: flex;
+ align-items: center;
+ gap: 6px;
+ text-decoration: none;
+ }
+ .download-btn:hover {
+ background: rgba(255, 215, 110, 0.2);
+ border-color: #ffd700;
+ transform: translateY(-1px);
+ }
+
+ /* --- PANTALLA DE INICIO (WELCOME SCREEN) --- */
+ #welcome-screen {
+ position: fixed;
+ inset: 0;
+ z-index: 50;
+ background: radial-gradient(circle at center, #2e2408 0%, #0e0a04 100%);
+ display: flex;
+ flex-direction: column;
+ justify-content: center;
+ align-items: center;
+ text-align: center;
+ padding: 20px;
+ opacity: 1;
+ transition: opacity 1s ease, visibility 1s ease;
+ }
+ #welcome-screen.hidden {
+ opacity: 0;
+ visibility: hidden;
+ pointer-events: none;
+ }
+ #welcome-screen h1 {
+ color: #ffdd75;
+ font-size: clamp(1.8rem, 5vw, 2.8rem);
+ font-family: 'Caveat', cursive;
+ text-shadow: 0 0 20px rgba(255, 215, 110, 0.5);
+ margin-bottom: 2rem;
+ }
+ .start-btn {
+ background: linear-gradient(135deg, #ffd700, #ffa500);
+ color: #1a1405;
+ border: none;
+ padding: 1rem 2rem;
+ font-size: 1.2rem;
+ font-weight: bold;
+ border-radius: 50px;
+ cursor: pointer;
+ box-shadow: 0 0 25px rgba(255, 215, 110, 0.5);
+ transition: transform 0.2s ease, box-shadow 0.2s ease;
+ }
+ .start-btn:hover {
+ transform: scale(1.05);
+ box-shadow: 0 0 35px rgba(255, 215, 110, 0.8);
+ }
+
+ /* --- BOTÓN FLOTANTE DE MÚSICA --- */
+ #music-control {
+ position: fixed;
+ bottom: 20px;
+ right: 20px;
+ z-index: 40;
+ width: 48px;
+ height: 48px;
+ border-radius: 50%;
+ background: rgba(35, 27, 6, 0.85);
+ border: 1px solid rgba(230, 190, 80, 0.5);
+ color: #ffdd75;
+ font-size: 20px;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ cursor: pointer;
+ backdrop-filter: blur(4px);
+ transition: transform 0.2s ease, background 0.2s ease;
+ }
+ #music-control:hover {
+ transform: scale(1.1);
+ background: rgba(58, 45, 10, 0.95);
+ }
+
+ #hint {
+ position: fixed;
+ top: 14px; left: 14px;
+ z-index: 5;
+ color: #ead98b;
+ font-size: 12px;
+ letter-spacing: 0.04em;
+ background: rgba(35, 27, 6, 0.55);
+ border: 1px solid rgba(230, 190, 80, 0.3);
+ padding: 8px 12px;
+ border-radius: 999px;
+ backdrop-filter: blur(4px);
+ user-select: none;
+ pointer-events: none;
+ }
+
+ #hint .hint-touch { display: none; }
+ @media (pointer: coarse) {
+ #hint .hint-desktop { display: none; }
+ #hint .hint-touch { display: inline; }
+ }
+
+ #fade {
+ position: fixed;
+ inset: 0;
+ z-index: 30;
+ background: #000;
+ pointer-events: none;
+ opacity: 1;
+ transition: opacity 2.2s ease;
+ }
+ #fade.done { opacity: 0; }
+
+ #modal {
+ position: fixed;
+ inset: 0;
+ z-index: 10;
+ display: grid;
+ place-items: center;
+ background: rgba(20, 15, 4, 0.65);
+ backdrop-filter: blur(8px);
+ opacity: 0;
+ visibility: hidden;
+ transition: opacity 0.25s ease, visibility 0.25s ease;
+ }
+ #modal.open { opacity: 1; visibility: visible; }
+
+ .card {
+ position: relative;
+ width: min(88vw, 420px);
+ padding: 2.2rem 2rem 2rem;
+ max-height: 88vh;
+ max-height: 88dvh;
+ overflow-y: auto;
+ text-align: center;
+ border-radius: 20px;
+ color: #f7eecb;
+ background: linear-gradient(165deg, #2e2408, #1a1405);
+ border: 1px solid rgba(255, 214, 90, 0.4);
+ box-shadow: 0 0 60px rgba(255, 214, 90, 0.16), inset 0 0 40px rgba(255, 214, 90, 0.05);
+ transform: translateY(14px) scale(0.96);
+ transition: transform 0.25s ease;
+ }
+ #modal.open .card { transform: none; }
+
+ .card .flower { font-size: 2.6rem; filter: drop-shadow(0 0 14px rgba(255, 220, 110, 0.6)); }
+ .card h2 {
+ margin: 0.6rem 0 0.2rem;
+ font-size: 1.6rem;
+ letter-spacing: 0.06em;
+ color: #ffdd75;
+ text-shadow: 0 0 18px rgba(255, 215, 110, 0.4);
+ }
+ .card .type {
+ font-size: 0.7rem;
+ text-transform: uppercase;
+ letter-spacing: 0.25em;
+ color: #d9a84f;
+ margin-bottom: 0.9rem;
+ }
+ .card p {
+ margin: 0;
+ line-height: 1.45;
+ color: #ecdfb2;
+ font-family: 'Caveat', 'Segoe Script', cursive;
+ font-size: 1.5rem;
+ }
+ .card .coords { margin-top: 1.2rem; font-size: 0.68rem; letter-spacing: 0.18em; color: #a8843e; }
+
+ #close {
+ position: absolute;
+ top: 10px; right: 10px;
+ width: 34px; height: 34px;
+ border-radius: 50%;
+ border: 1px solid rgba(255, 214, 90, 0.35);
+ background: rgba(48, 38, 10, 0.7);
+ color: #ead98b;
+ font-size: 15px;
+ cursor: pointer;
+ transition: background 0.15s ease, transform 0.15s ease;
+ }
+ #close:hover { background: rgba(88, 70, 16, 0.9); transform: rotate(90deg); }
+
+ @media (max-width: 640px) {
+ #hint { top: 10px; left: 10px; font-size: 11px; }
+ .card { padding: 1.8rem 1.4rem 1.6rem; }
+ .card h2 { font-size: 1.35rem; }
+ }
+ </style>
+</head>
+<body>
+
+ <!-- Barra de descarga -->
+ <div id="top-bar">
+ <button class="download-btn" id="download-self-btn">💾 Descargar Archivo HTML</button>
+ </div>
+
+ <!-- Pantalla de inicio para interacción del usuario -->
+ <div id="welcome-screen">
+ <h1>Un regalo espacial para ti 🌻</h1>
+ <button class="start-btn" id="start-btn">Haz clic aquí para explorar tu regalo ✨</button>
+ </div>
+
+ <!-- Botón flotante para pausar/reproducir la música -->
+ <button id="music-control" title="Activar/Pausar Música">🎵</button>
+
+ <!-- Elemento de Audio con enlace directo de GitHub -->
+ <audio id="bg-music" loop preload="auto">
+  <source src="https://github.com/LilZeta/21-09-26-KaiGift/raw/refs/heads/main/cancion.mp3" type="audio/mpeg" />
+ </audio>
+
+ <div id="hint">
+ <span class="hint-desktop">Arrastra para orbitar · Rueda para acercar o alejar · Clic derecho para desplazar · Haz clic en las flores</span>
+ <span class="hint-touch">Un dedo para orbitar · Dos dedos para acercar y desplazar · Toca las flores</span>
+ </div>
+ <div id="fade"></div>
+
+ <div id="modal">
+ <div class="card">
+ <button id="close" aria-label="Close">✕</button>
+ <div class="flower">🌻</div>
+ <h2 id="star-name"></h2>
+ <div class="type" id="star-type"></div>
+ <p id="star-text"></p>
+ <div class="coords" id="star-coords"></div>
+ </div>
+ </div>
+
+ <script type="importmap">
+ {
+ "imports": {
+ "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+ "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+ }
+ }
+ </script>
+
+ <script type="module">
+ import * as THREE from 'three';
+ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+ import { AfterimagePass } from 'three/addons/postprocessing/AfterimagePass.js';
+
+ /* --- DESCARGA AUTOMÁTICA DEL DOCUMENTO --- */
+ document.getElementById('download-self-btn').addEventListener('click', () => {
+ const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+ const blob = new Blob([htmlContent], { type: 'text/html' });
+ const url = URL.createObjectURL(blob);
+ const a = document.createElement('a');
+ a.href = url;
+ a.download = 'Flores_Amarillas_Espaciales.html';
+ document.body.appendChild(a);
+ a.click();
+ document.body.removeChild(a);
+ URL.revokeObjectURL(url);
+ });
+
+ /* --- GESTIÓN DE AUDIO Y PANTALLA DE INICIO --- */
+ const audio = document.getElementById('bg-music');
+ const welcomeScreen = document.getElementById('welcome-screen');
+ const startBtn = document.getElementById('start-btn');
+ const musicControl = document.getElementById('music-control');
+
+ function playMusic() {
+ audio.play().then(() => {
+ musicControl.textContent = '🎵';
+ }).catch((err) => {
+ console.log("El navegador bloqueó la reproducción automática:", err);
+ });
+ }
+
+ startBtn.addEventListener('click', () => {
+ welcomeScreen.classList.add('hidden');
+ playMusic();
+ finishIntro();
+ });
+
+ musicControl.addEventListener('click', () => {
+ if (audio.paused) {
+ audio.play();
+ musicControl.textContent = '🎵';
+ } else {
+ audio.pause();
+ musicControl.textContent = '🔇';
+ }
+ });
+
+ const STARS = [
+ {
+ name: 'El Girasol Primordial', type: 'Núcleo Galáctico', r: 0.6, branch: 0, special: true,
+ text: 'El corazón de la galaxia: el girasol del que nacieron todas las flores amarillas del universo. Cuenta la tradición que quien lo ve florecer un 21 de septiembre se le cumple un deseo. Nadie ha podido comprobarlo porque a nadie le han dado ganas de irse.',
+ },
+ {
+ name: 'La Flor de Septiembre', type: 'Ancla del Brazo Espiral', r: 3.2, branch: 1,
+ text: 'La tradición manda, manito: el 21 de septiembre se regalan flores amarillas por la alegría, por el comienzo nuevo y porque querés pasar toda la vida con esa persona. En el hemisferio norte es la misma vaina pero el 21 de marzo. La primavera no entiende de hemisferios, entiende de amor.',
+ },
+ {
+ name: 'Ramo Cósmico', type: 'Nebulosa de Reflexión', r: 4.6, branch: 2,
+ text: 'Un ramo tan grande que se ve desde otra galaxia. Las naves que pasan por aquí salen enamoradas y con las palabras listas en la garganta. Díselo, pana. El universo entero ya lo sabe, menos esa persona.',
+ },
+ {
+ name: 'Pétalo Pulsante', type: 'Faro Giratorio', r: 5.8, branch: 3,
+ text: 'Late 21 veces por segundo, uno por cada primavera que te haya agarrado enamorado. Es el corazón más alegre de la galaxia: los científicos lo estudian y los románticos le escriben canciones.',
+ },
+ {
+ name: 'Polen de Oro', type: 'Nebulosa Oscura', r: 6.8, branch: 4,
+ text: 'Invisible pa los telescopios, inconfundible pa las abejas cósmicas, vale. Dicen que un grano de este polen hace florecer hasta los cactus más amargados. También hace estornudar, pero con ternura.',
+ },
+ {
+ name: 'Supernova Primaveral', type: 'Resto Estelar', r: 7.9, branch: 0,
+ text: 'Explotó un 21 de septiembre y desde entonces la onda expansiva sigue viajando con pura alegría y ganas de empezar de nuevo. Le desea a todo lo que encuentra un comienzo fresco y una vida entera pa compartir. La energía más chévere del sector.',
+ },
+ {
+ name: 'La Grieta del Renacer', type: 'Anomalía del Espacio Profundo', r: 9.0, branch: 1,
+ text: 'Un doblez del espacio donde todo vuelve a empezar. Aquí los lunes se sienten viernes, el café frío se calienta solo y las segundas oportunidades crecen en racimos. Pasar toda una vida aquí no suena nada mal, la verdad.',
+ },
+ {
+ name: 'Órbita de los Enamorados', type: 'Sistema Binario', r: 10.2, branch: 2,
+ text: 'Dos flores girando eternamente la una alrededor de la otra, agarraditas. Los astrónomos lo llaman sistema binario; los románticos lo llaman pasar toda la vida juntos. Ambos tienen razón, chamo.',
+ },
+ {
+ name: 'El Semillero Estelar', type: 'Guardería Estelar', r: 11.3, branch: 3,
+ text: 'Finitas semillas de polvo estelar estiradas por años luz. Aquí nacen flores amarillas todos los días, una más hermosa que la otra, listas pa que alguien las regale con el corazón y un mensajito bien pensado.',
+ },
+ {
+ name: 'El Cinturón de las Margaritas', type: 'Cinturón de Asteroides', r: 12.4, branch: 4,
+ text: 'Un cinturón de asteroides que, mirándolo bien, son millones de margaritas girando pa todos los lados. Puedes preguntarles «me quiere, no me quiere», pero como son tantas, la respuesta promedio siempre sale «te quiere». Matemática del amor, pana.',
+ },
+ {
+ name: 'El Jardín de la Abuela', type: 'Jardín Estelar', r: 3.8, branch: 3,
+ text: 'Aquí no crece ninguna planta rara: puras flores amarillas, las favoritas de toda abuela. Dicen que huelen a café recién hecho y a pan de jamón de diciembre. Cuidar este jardín es un honor que se hereda.',
+ },
+ {
+ name: 'La Corona de Pétalos', type: 'Anillo de Flores', r: 4.9, branch: 0,
+ text: 'Un anillo de flores girando en formación perfecta alrededor del brazo espiral. Las que lo han visto de cerca juran que es la galaxia felicitando a alguien. No sabemos a quién, pero se ve feliz.',
+ },
+ {
+ name: 'La Estación del Díselo', type: 'Puerto de Naves', r: 5.9, branch: 1,
+ text: 'Parada obligatoria pa las naves enamoradas. Aquí los tripulantes juntan las agallas antes de decir «te quiero». La gravedad del lugar ayuda: empuja las palabras pa afuera, vale.',
+ },
+ {
+ name: 'El Reloj de la Primavera', type: 'Reloj Cósmico', r: 6.9, branch: 2,
+ text: 'Marca siempre 21 de septiembre, sin importar la fecha. Los relojeros cósmicos llevan siglos intentándolo arreglar, y los románticos les han pedido, por favor, que nunca lo logren.',
+ },
+ {
+ name: 'El Río de Miel', type: 'Corriente Dorada', r: 7.9, branch: 4,
+ text: 'Un caudal dorado que atraviesa el brazo espiral a su propio ritmo. Las abejas cósmicas hacen escala aquí antes de seguir su ruta. La miel que sale de esto endulza hasta los lunes, manito.',
+ },
+ {
+ name: 'El Bucle del Primer Día', type: 'Bucle Temporal', r: 8.9, branch: 3,
+ text: 'Un pliegue donde todo se siente como primer día: primer café, primer sol de la mañana, primeras mariposas en el estómago. Los que pasan un rato salen con la sonrisa recién estrenada.',
+ },
+ {
+ name: 'La Cápsula del Tiempo', type: 'Archivo Galáctico', r: 9.9, branch: 0,
+ text: 'Guarda cada ramo amarillo regalado en la historia de la galaxia, con su fecha y su dedicatoria. Los archivistas cuentan que el estante del 21 de septiembre es, por mucho, el más grande de todos.',
+ },
+ {
+ name: 'El Susurro de Pétalos', type: 'Campo Floral', r: 10.9, branch: 2,
+ text: 'Campo de flores que brillan cada vez que alguien, en cualquier rincón del universo, piensa en otra persona. Los astrónomos no entienden la física. Los enamorados tampoco, pero la usan todos los días.',
+ },
+ {
+ name: 'La Feria de la Primavera', type: 'Feria Estelar', r: 12.0, branch: 1,
+ text: 'Una vez al año galáctico, los brazos espirales se llenan de luces, algodón de azúcar estelar y flores amarillas hasta pa regalar. La tradición manda llevar a quien más quieras. El estacionamiento es un problema cósmico.',
+ },
+ {
+ name: 'El Faro del Reencuentro', type: 'Faro Galáctico', r: 13.2, branch: 4,
+ text: 'Se enciende cuando dos personas que se extrañan piensan la misma cosa al mismo tiempo. Lleva encendido casi sin pausa desde el principio de los tiempos, por si tenías dudas de que esto pasa seguido, pana.',
+ },
+ ];
+
+ const IS_MOBILE = matchMedia('(pointer: coarse)').matches;
+ const MAX_DPR = IS_MOBILE ? 1.5 : 2;
+
+ const renderer = new THREE.WebGLRenderer({ antialias: true });
+ renderer.setPixelRatio(Math.min(devicePixelRatio, MAX_DPR));
+ renderer.setSize(innerWidth, innerHeight);
+ renderer.toneMapping = THREE.ACESFilmicToneMapping;
+ renderer.toneMappingExposure = 1.2;
+ document.body.appendChild(renderer.domElement);
+ renderer.domElement.addEventListener('webglcontextlost', (e) => e.preventDefault());
+
+ const scene = new THREE.Scene();
+ scene.background = new THREE.Color('#0b0803');
+
+ const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 300);
+
+ const controls = new OrbitControls(camera, renderer.domElement);
+ controls.enableDamping = true;
+ controls.dampingFactor = 0.06;
+ controls.minDistance = 4;
+ controls.maxDistance = 70;
+
+ const introFrom = new THREE.Vector3(38, 26, 44);
+ const introTo = new THREE.Vector3(6, 9, camera.aspect < 1 ? 21 : 15);
+ let introT = 0;
+ camera.position.copy(introFrom);
+ controls.enabled = false;
+ controls.autoRotateSpeed = 0.3;
+ let clock = new THREE.Clock();
+ let lastInteract = 0;
+ controls.addEventListener('start', () => { lastInteract = clock.elapsedTime; });
+
+ function finishIntro() {
+ introT = 1;
+ camera.position.copy(introTo);
+ controls.enabled = true;
+ lastInteract = clock.elapsedTime;
+ }
+
+ setTimeout(() => document.getElementById('fade').classList.add('done'), 100);
+
+ const composer = new EffectComposer(renderer);
+ composer.setPixelRatio(Math.min(devicePixelRatio, MAX_DPR));
+ composer.setSize(innerWidth, innerHeight);
+ composer.addPass(new RenderPass(scene, camera));
+ const bloomStrength = IS_MOBILE ? 0.45 : 0.65;
+ composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), bloomStrength, 0.6, 0.3));
+
+ const afterimagePass = new AfterimagePass(0.88);
+ afterimagePass.enabled = new URLSearchParams(location.search).has('trails');
+ composer.addPass(afterimagePass);
+
+ composer.addPass(new OutputPass());
+
+ const cinematicPass = new ShaderPass({
+ uniforms: {
+ tDiffuse: { value: null },
+ uTime: { value: 0 },
+ },
+ vertexShader: /* glsl */ `
+ varying vec2 vUv;
+ void main() {
+ vUv = uv;
+ gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+ }
+ `,
+ fragmentShader: /* glsl */ `
+ uniform sampler2D tDiffuse;
+ uniform float uTime;
+ varying vec2 vUv;
+
+ float rand(vec2 co) {
+ return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
+ }
+
+ void main() {
+ vec2 centered = vUv - 0.5;
+ float dist = length(centered);
+
+ vec2 shift = centered * dist * 0.008;
+ vec3 col;
+ col.r = texture2D(tDiffuse, vUv + shift).r;
+ col.g = texture2D(tDiffuse, vUv).g;
+ col.b = texture2D(tDiffuse, vUv - shift).b;
+
+ col *= vec3(1.005, 1.0, 0.99);
+ col += vec3(0.003, 0.002, 0.001) * (1.0 - col);
+
+ float luma = dot(col, vec3(0.299, 0.587, 0.114));
+ float tt = mod(uTime, 10.0);
+ float grain = rand(gl_FragCoord.xy + vec2(tt * 127.1, tt * 311.7)) - 0.5;
+ col += grain * 0.055 * (1.0 - smoothstep(0.0, 0.5, luma));
+
+ float vig = smoothstep(0.92, 0.30, dist);
+ col *= mix(0.62, 1.0, vig);
+
+ gl_FragColor = vec4(col, 1.0);
+ }
+ `,
+ });
+ composer.addPass(cinematicPass);
+
+ const galaxy = new THREE.Group();
+ scene.add(galaxy);
+
+ function drawPetal(ctx, x, y, angle, len, width, stops = ['#ffef9e', '#ffd23e', '#ffb400']) {
+ ctx.save();
+ ctx.translate(x, y);
+ ctx.rotate(angle);
+ const gradient = ctx.createLinearGradient(0, 0, 0, -len);
+ gradient.addColorStop(0.0, stops[0]);
+ gradient.addColorStop(0.55, stops[1]);
+ gradient.addColorStop(1.0, stops[2]);
+ ctx.beginPath();
+ ctx.moveTo(0, 0);
+ ctx.bezierCurveTo(width, -len * 0.25, width * 0.95, -len * 0.8, 0, -len);
+ ctx.bezierCurveTo(-width * 0.95, -len * 0.8, -width, -len * 0.25, 0, 0);
+ ctx.closePath();
+ ctx.fillStyle = gradient;
+ ctx.fill();
+ ctx.lineWidth = 3;
+ ctx.strokeStyle = 'rgba(200, 140, 15, 0.55)';
+ ctx.stroke();
+ ctx.restore();
+ }
+
+ function drawFlower(canvas) {
+ const size = canvas.width;
+ const cx = size / 2;
+ const cy = size / 2;
+ const ctx = canvas.getContext('2d');
+
+ ctx.shadowColor = 'rgba(255, 220, 110, 0.9)';
+ ctx.shadowBlur = 22;
+
+ const petals = 13;
+ for (let i = 0; i < petals; i++) {
+ drawPetal(ctx, cx, cy, (i / petals) * Math.PI * 2, size * 0.42, size * 0.085);
+ }
+
+ const center = ctx.createRadialGradient(cx, cy, 0, cx, cy, size * 0.14);
+ center.addColorStop(0.0, '#ffe083');
+ center.addColorStop(0.6, '#eda419');
+ center.addColorStop(1.0, '#a5670d');
+ ctx.shadowBlur = 0;
+ ctx.beginPath();
+ ctx.arc(cx, cy, size * 0.14, 0, Math.PI * 2);
+ ctx.fillStyle = center;
+ ctx.fill();
+ ctx.lineWidth = 5;
+ ctx.strokeStyle = 'rgba(140, 88, 12, 0.9)';
+ ctx.stroke();
+ }
+
+ function drawGlow(canvas) {
+ const size = canvas.width;
+ const ctx = canvas.getContext('2d');
+ const g = ctx.createRadialGradient(size / 2, si
